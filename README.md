@@ -1,4 +1,4 @@
-# attempt to implement deep BLSTM with Lasagne
+# Attempt to implement deep BLSTM with Lasagne
 
 The network is applied to phoneme recognition on the TIMIT dataset. 
 
