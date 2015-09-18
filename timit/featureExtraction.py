@@ -302,11 +302,12 @@ def getTrainValTestPaths(timitRootDir,numSpeakersVal):
     return wav_train, wav_val, wav_test, phn_train, phn_val, phn_test
 
 
-def normaliseFeatureVectors(x_train, x_val, x_test):
+def normaliseFeatureVectorsOverAllData(x_train, x_val, x_test):
     '''
     Normalises the training, validation and test set.
     Normalisation is done by subtracting the mean-vector and divding
-    by std-deviation-vector of the training data. 
+    by std-deviation-vector of all training data.
+    This is not the typical use-case
     Given numpy vector of training samples with dimension sequenceLength x feature_dim,
     mean and variance is calculated for every feature independently.
     :params:
@@ -334,6 +335,46 @@ def normaliseFeatureVectors(x_train, x_val, x_test):
     for it in range(len(x_val)):
         x_val[it] = np.divide(np.subtract(x_val[it],mean_vector),std_vector).astype(np.float32)
     for it in range(len(x_test)):
+        x_test[it] = np.divide(np.subtract(x_test[it],mean_vector),std_vector).astype(np.float32)
+    
+    return x_train, x_val, x_test, mean_vector, std_vector
+
+
+def normaliseFeatureVectors(x_train, x_val, x_test):
+    '''
+    Normalises the training, validation and test set.
+    Normalisation is done by subtracting the mean-vector and divding
+    by std-deviation-vector of training data. This is done per utterance
+    Given numpy vector of training samples with dimension sequenceLength x feature_dim,
+    mean and variance is calculated for every feature independently.
+    :params:
+        - x_train: numpy vector of training set
+            used for calculating the mean and std-deviation
+        - x_val: numpy vector of validation set
+        - x_test: numpy vector of test set
+    :returns:
+        - x_train: numpy vector of normalised training set 
+            has zero mean, unit variance over training data, for each dim
+        - x_val: numpy vector of normalised validation set
+        - x_test: numpy vector of normalised test set
+        - mean_vector: mean-vector
+            calculated from training set. Has dimension equal to feature-dim
+        - std_vector: std-deviation-vector
+            calculated form training set. Has dimension equal to feature-dim
+    '''
+    # normalize to zero mean and variance 1 and convert to float32 for GPU. 
+    # convert after normalization to ensure no precision is wasted.
+    for it in range(len(x_train)):
+    	mean_vector = np.mean(x_train[it],axis=0)
+    	std_vector = np.sqrt(np.var(x_train[it],axis=0))
+        x_train[it] = (np.divide(np.subtract(x_train[it],mean_vector),std_vector)).astype(np.float32)
+    for it in range(len(x_val)):
+    	mean_vector = np.mean(x_train[it],axis=0)
+    	std_vector = np.sqrt(np.var(x_train[it],axis=0))
+        x_val[it] = np.divide(np.subtract(x_val[it],mean_vector),std_vector).astype(np.float32)
+    for it in range(len(x_test)):
+    	mean_vector = np.mean(x_train[it],axis=0)
+    	std_vector = np.sqrt(np.var(x_train[it],axis=0))
         x_test[it] = np.divide(np.subtract(x_test[it],mean_vector),std_vector).astype(np.float32)
     
     return x_train, x_val, x_test, mean_vector, std_vector
