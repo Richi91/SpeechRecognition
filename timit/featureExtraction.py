@@ -365,16 +365,16 @@ def normaliseFeatures(x_train, x_val, x_test):
     # normalize to zero mean and variance 1 and convert to float32 for GPU. 
     # convert after normalization to ensure no precision is wasted.
     for it in range(len(x_train)):
-    	mean_vector = np.mean(x_train[it],axis=0)
-    	std_vector = np.sqrt(np.var(x_train[it],axis=0))
+        mean_vector = np.mean(x_train[it],axis=0)
+        std_vector = np.sqrt(np.var(x_train[it],axis=0))
         x_train[it] = (np.divide(np.subtract(x_train[it],mean_vector),std_vector)).astype(np.float32)
     for it in range(len(x_val)):
-    	mean_vector = np.mean(x_train[it],axis=0)
-    	std_vector = np.sqrt(np.var(x_train[it],axis=0))
+        mean_vector = np.mean(x_val[it],axis=0)
+        std_vector = np.sqrt(np.var(x_val[it],axis=0))
         x_val[it] = np.divide(np.subtract(x_val[it],mean_vector),std_vector).astype(np.float32)
     for it in range(len(x_test)):
-    	mean_vector = np.mean(x_train[it],axis=0)
-    	std_vector = np.sqrt(np.var(x_train[it],axis=0))
+        mean_vector = np.mean(x_test[it],axis=0)
+        std_vector = np.sqrt(np.var(x_test[it],axis=0))
         x_test[it] = np.divide(np.subtract(x_test[it],mean_vector),std_vector).astype(np.float32)
     
     return x_train, x_val, x_test, mean_vector, std_vector
