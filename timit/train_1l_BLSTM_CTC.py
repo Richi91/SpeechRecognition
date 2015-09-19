@@ -31,13 +31,19 @@ import utils
 import makeBatches
 import lasagneExtensions
 import sys
+import os
 sys.path.append('../../Lasagne-CTC')
 import ctc_cost as ctc
 
 logger = utils.createLogger()
 
+paramsPath = os.getenv("HOME") + '/data/TimitModelParams'
+if not os.path.exists(paramsPath):
+    os.makedirs(paramsPath)
+
+
 # ***************************** load netCDF4 datasets *******************************
-dataPath = '../data/CTC/'
+dataPath = os.getenv("HOME") + '/data/TimitFeat/CTC/'
 trainDataset = Dataset(dataPath+'train.nc')
 valDataset = Dataset(dataPath+'val.nc')
 
@@ -49,7 +55,7 @@ learning_rate = lasagne.utils.floatX(1e-4)
 momentum = 0.9
 MIN_ITER_HIGHEST_LR, THRESH_DELTA_PER, THRESH_MIN_ITER, THRESH_STOP, FACTOR_LOWER_LR , FACTOR_LOWER_MOM = \
 20,                  0.005,            6,               20,          2.0,              1.035        
-BATCH_SIZE = 10
+BATCH_SIZE = 50
 START_EPOCH = 0 #e.g. if restart training
 N_EPOCHS = 100
 EPOCH_SIZE = 100 
@@ -96,9 +102,9 @@ l_out_soft = lasagne.layers.NonlinearityLayer(
 model_soft = lasagne.layers.ReshapeLayer(l_out_soft, input_mask_shape+(OUTPUT_DIM,))
 
 
-filename = '../data/paramValues/params_1l_lr1em4_mom90_b10_epoch29.pkl'
-paramValues = utils.loadParams(filename)
-lasagne.layers.set_all_param_values(model_soft, paramValues)
+#filename = paramsPath + '/params_1l_lr1em4_mom90_b10_epoch29.pkl'
+#paramValues = utils.loadParams(filename)
+#lasagne.layers.set_all_param_values(model_soft, paramValues)
 
         
 output_lin = lasagne.layers.get_output(model_lin) 
@@ -216,12 +222,12 @@ for epoch in range(START_EPOCH, N_EPOCHS):
         
     if n_below_thresh_untilStop > THRESH_STOP:
         logger.info('Finished Training')
-        filename = '../data/paramValues/params_1l_lr1em4_mom90_b10_epoch' + str(epoch) + '.pkl' 
+        filename = os.getenv("HOME") + paramsPath + '/params_1l_lr1em4_mom90_b10_epoch' + str(epoch) + '.pkl' 
         utils.saveParams(model_lin, filename)
         break    
 #************************************ save param values **************************************
     if ((epoch+1)%10 == 0):
-        filename = '../data/paramValues/params_1l_lr1em4_mom90_b10_epoch' + str(epoch) + '.pkl' 
+        filename = os.getenv("HOME") + paramsPath + '/params_1l_lr1em4_mom90_b10_epoch' + str(epoch) + '.pkl' 
         utils.saveParams(model_lin, filename)
         print 'save'                          
                                
