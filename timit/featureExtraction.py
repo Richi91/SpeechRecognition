@@ -302,7 +302,7 @@ def getTrainValTestPaths(timitRootDir,numSpeakersVal):
     return wav_train, wav_val, wav_test, phn_train, phn_val, phn_test
 
 
-def normaliseFeatureVectorsOverAllData(x_train, x_val, x_test):
+def normaliseFeaturesOverAllData(x_train, x_val, x_test):
     '''
     Normalises the training, validation and test set.
     Normalisation is done by subtracting the mean-vector and divding
@@ -340,7 +340,7 @@ def normaliseFeatureVectorsOverAllData(x_train, x_val, x_test):
     return x_train, x_val, x_test, mean_vector, std_vector
 
 
-def normaliseFeatureVectors(x_train, x_val, x_test):
+def normaliseFeatures(x_train, x_val, x_test):
     '''
     Normalises the training, validation and test set.
     Normalisation is done by subtracting the mean-vector and divding
@@ -398,12 +398,14 @@ def CreateNetCDF(useCTC):
     """
     TODO: add some description
     """
-    rootdir = '../../TIMIT/timit' # root directory of timit
-    dataPath = '../data/' # store Path
+    rootdir = os.getenv("HOME") + '/data/TIMIT/timit' # root directory of timit
+    dataPath = os.getenv("HOME") + '/data/TimitFeat' # store Path
     if useCTC:
-        dataPath+= 'CTC/'
+        dataPath+= '/CTC'
     else:
-        dataPath+= 'noCTC/'
+        dataPath+= '/noCTC'
+    if not os.path.exists(dataPath):
+        os.makedirs(dataPath)
     
     winlen, winstep, nfilt, lowfreq, highfreq, preemph, winSzForDelta, samplerate = \
     0.025,  0.01,   40,     200,     8000,     0.97,    2,             16000           
@@ -416,7 +418,7 @@ def CreateNetCDF(useCTC):
     X_val = getAllFeatures(wav_val, samplerate, winlen, winstep, nfilt,nfft, lowfreq, highfreq,preemph,winSzForDelta)
     X_test = getAllFeatures(wav_test, samplerate, winlen, winstep, nfilt,nfft, lowfreq, highfreq,preemph,winSzForDelta)
     
-    X_train, X_val, X_test, mean_vector, std_vect = normaliseFeatureVectors(X_train, X_val, X_test)
+    X_train, X_val, X_test, mean_vector, std_vect = normaliseFeatures(X_train, X_val, X_test)
     
     if useCTC:
         labelSequence_train = getTargets(phn_train)
@@ -449,7 +451,7 @@ def CreateNetCDF(useCTC):
     #    numLabels = 61 #uncommented
         numLabels = 62
 
-    train = Dataset(dataPath+'train.nc', 'w', format='NETCDF4')
+    train = Dataset(dataPath+'/train.nc', 'w', format='NETCDF4')
     try:
         # create dimension
         train.createDimension('numSeqs', numSeqs_train)
@@ -502,7 +504,7 @@ def CreateNetCDF(useCTC):
     
     
     
-    val = Dataset(dataPath+'val.nc', 'w', format='NETCDF4')
+    val = Dataset(dataPath+'/val.nc', 'w', format='NETCDF4')
     try:
         # create dimension
         val.createDimension('numSeqs', numSeqs_val)
@@ -553,7 +555,7 @@ def CreateNetCDF(useCTC):
     
     
     
-    test = Dataset(dataPath+'test.nc', 'w', format='NETCDF4')
+    test = Dataset(dataPath+'/test.nc', 'w', format='NETCDF4')
     try:
         # create dimension
         test.createDimension('numSeqs', numSeqs_test)
