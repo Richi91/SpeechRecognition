@@ -30,6 +30,51 @@ def BLSTMConcatLayer(*args, **kwargs):
         W_cell=lasagne.init.Uniform(0.1), b=lasagne.init.Uniform(0.1))
     forgetgate=lasagne.layers.recurrent.Gate(
         W_in=lasagne.init.Uniform(0.1), W_hid=lasagne.init.Uniform(0.1), \
+        W_cell=lasagne.init.Uniform(0.1), b=lasagne.init.Constant(2.0))        
+    outgate=lasagne.layers.recurrent.Gate(
+        W_in=lasagne.init.Uniform(0.1), W_hid=lasagne.init.Uniform(0.1), \
+        W_cell=lasagne.init.Uniform(0.1), b=lasagne.init.Uniform(0.1))
+    cell=lasagne.layers.recurrent.Gate(
+        W_in=lasagne.init.Uniform(0.1), W_hid=lasagne.init.Uniform(0.1), \
+        W_cell=None, b=lasagne.init.Uniform(0.1), nonlinearity=lasagne.nonlinearities.tanh)
+    
+    l_fwd = lasagne.layers.LSTMLayer(
+        *args, backwards=False, ingate=ingate, forgetgate=forgetgate, cell=cell, outgate=outgate, **kwargs)
+
+        
+    ingate=lasagne.layers.recurrent.Gate(
+        W_in=lasagne.init.Uniform(0.1), W_hid=lasagne.init.Uniform(0.1), \
+        W_cell=lasagne.init.Uniform(0.1), b=lasagne.init.Uniform(0.1))
+    forgetgate=lasagne.layers.recurrent.Gate(
+        W_in=lasagne.init.Uniform(0.1), W_hid=lasagne.init.Uniform(0.1), \
+        W_cell=lasagne.init.Uniform(0.1), b=lasagne.init.Constant(2.0))        
+    outgate=lasagne.layers.recurrent.Gate(
+        W_in=lasagne.init.Uniform(0.1), W_hid=lasagne.init.Uniform(0.1), \
+        W_cell=lasagne.init.Uniform(0.1), b=lasagne.init.Uniform(0.1))
+    cell=lasagne.layers.recurrent.Gate(
+        W_in=lasagne.init.Uniform(0.1), W_hid=lasagne.init.Uniform(0.1), \
+        W_cell=None, b=lasagne.init.Uniform(0.1), nonlinearity=lasagne.nonlinearities.tanh)
+    
+    l_bwd = lasagne.layers.LSTMLayer(
+        *args, backwards=True,  ingate=ingate, forgetgate=forgetgate, cell=cell, outgate=outgate, **kwargs)
+        
+    return lasagne.layers.ConcatLayer((l_fwd,l_bwd),axis=2)
+    
+def BLSTMElemwiseSumLayer(*args, **kwargs):
+    """
+    This function generates a BLSTM by concatenating a forward and a backward LSTM
+    at axis 2, which should be the axis for the hidden dimension (batch_size x seq_len x hidden_dim)
+    :parameters: See LSTMLayer for inputs, this layer receives the same inputs as a LSTM-Layer
+    :returns: lasagne.layers.ConcatLayer of 2 LSTM layers 
+    """
+    kwargs.pop('backwards', None)
+    
+    
+    ingate=lasagne.layers.recurrent.Gate(
+        W_in=lasagne.init.Uniform(0.1), W_hid=lasagne.init.Uniform(0.1), \
+        W_cell=lasagne.init.Uniform(0.1), b=lasagne.init.Uniform(0.1))
+    forgetgate=lasagne.layers.recurrent.Gate(
+        W_in=lasagne.init.Uniform(0.1), W_hid=lasagne.init.Uniform(0.1), \
         W_cell=lasagne.init.Uniform(0.1), b=lasagne.init.Constant(1.5))        
     outgate=lasagne.layers.recurrent.Gate(
         W_in=lasagne.init.Uniform(0.1), W_hid=lasagne.init.Uniform(0.1), \
@@ -58,7 +103,7 @@ def BLSTMConcatLayer(*args, **kwargs):
     l_bwd = lasagne.layers.LSTMLayer(
         *args, backwards=True,  ingate=ingate, forgetgate=forgetgate, cell=cell, outgate=outgate, **kwargs)
         
-    return lasagne.layers.ConcatLayer((l_fwd,l_bwd),axis=2)
+    return lasagne.layers.ElemwiseSumLayer((l_fwd,l_bwd))
 
 
 def categorical_crossentropy_batch(coding_dist, true_dist, mask):

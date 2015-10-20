@@ -54,7 +54,7 @@ def decodeSequenceNoCTC(sequence_probdist, mask):
 #                Add y∗ + k to A
 #        Remove all but the W most probable from B
 #        
-#    return y with highest log Pr(y)/|y| in B
+#    return y with highest log Pr(y)/|y| in B 
         
 def beamsearch(cost, extra, initial, B, E):
 	"""A breadth-first beam search.

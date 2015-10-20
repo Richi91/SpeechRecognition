@@ -43,20 +43,22 @@ if not os.path.exists(paramsPath):
 
 
 # ***************************** load netCDF4 datasets *******************************
-dataPath = os.getenv("HOME") + '/data/TimitFeat/CTC/'
-trainDataset = Dataset(dataPath+'train.nc')
-valDataset = Dataset(dataPath+'val.nc')
+dataPath = os.getenv("HOME") + '/data/TimitFeat/CTC'
+trainDataset = Dataset(dataPath+'/train.nc')
+valDataset = Dataset(dataPath+'/val.nc')
 
 
 
 # *************************** definitions  for test data ****************************
 # training parameters
-learning_rate = lasagne.utils.floatX(1e-4)
-momentum = 0.9
+learning_rate = lasagne.utils.floatX(1e-3)
+momentum = 0.92
+std_dev_weightNoise = 0.001
+
 MIN_ITER_HIGHEST_LR, THRESH_DELTA_PER, THRESH_MIN_ITER, THRESH_STOP, FACTOR_LOWER_LR , FACTOR_LOWER_MOM = \
-20,                  0.005,            6,               20,          2.0,              1.035        
+25,                  0.005,            5,               20,          2.0,              1.035        
 BATCH_SIZE = 50
-START_EPOCH = 0 #e.g. if restart training
+START_EPOCH = 39 #change if restart training
 N_EPOCHS = 100
 EPOCH_SIZE = 100 
 
@@ -67,7 +69,7 @@ HARD_GRAD_CLIP_LASAGNE= False
 
 # this is the actual grad clipping, used in sgd with momentum. The overall L2 norm is considered
 # of the gradients of all weight matrices (summed)
-SOFT_GRAD_CLIP_L2NORM_WEIGHT_TOTAL = 2.0e-3 / learning_rate  # 5 default (worked ~well)
+SOFT_GRAD_CLIP_L2NORM_WEIGHT_TOTAL = 4.0e-3 / learning_rate  # 5e-3 worked well
 
 
 GRADIENT_STEPS = -1 # defines how many timesteps are used for error backpropagation. -1 = all
@@ -80,7 +82,7 @@ MAX_OUTPUT_SEQ_LEN = len(trainDataset.dimensions['maxLabelLength']) # 75
 MAX_INPUT_SEQ_LEN = len(trainDataset.dimensions['maxInputLength']) # 778
 #************************************************************************************
 
-logger.info('1 layer, momentum with L2 limit {}/learning rate, {} batches, learning rate {}, continue from epoch {}' \
+logger.info('1 layer, 20ms, momentum with L2 limit {}/learning rate, {} batches, learning rate {}, continue from epoch {}' \
     .format(SOFT_GRAD_CLIP_L2NORM_WEIGHT_TOTAL, BATCH_SIZE, learning_rate, START_EPOCH))
     
 logger.info('generating model...')
@@ -102,9 +104,9 @@ l_out_soft = lasagne.layers.NonlinearityLayer(
 model_soft = lasagne.layers.ReshapeLayer(l_out_soft, input_mask_shape+(OUTPUT_DIM,))
 
 
-#filename = paramsPath + '/params_1l_lr1em4_mom90_b10_epoch29.pkl'
-#paramValues = utils.loadParams(filename)
-#lasagne.layers.set_all_param_values(model_soft, paramValues)
+filename = paramsPath + '/epoch_window_39.pkl'
+paramValues = utils.loadParams(filename)
+lasagne.layers.set_all_param_values(model_soft, paramValues)
 
         
 output_lin = lasagne.layers.get_output(model_lin) 
@@ -164,7 +166,16 @@ for epoch in range(START_EPOCH, N_EPOCHS):
         makeBatches.makeRandomBatchesFromNetCDF(trainDataset, BATCH_SIZE)  
         
     for counter, (x, y, x_mask, y_mask) in enumerate(zip(x_train_batch, y_train_batch, x_train_mask, y_train_mask)):
-        start_time_batch = time.time()       
+        start_time_batch = time.time()      
+        
+        # Add gaussian noise to weight
+        if epoch >= 20:
+            paramValues = lasagne.layers.get_all_param_values(model_lin, trainable=True)
+            for iter_W, W in enumerate(paramValues):
+                noise = np.random.normal(0, std_dev_weightNoise, W.shape)
+                paramValues[iter_W] = (W + noise).astype(theano.config.floatX)
+            lasagne.layers.set_all_param_values(model_lin, paramValues, trainable=True)
+        
         _, c  = train(x, y, x_mask, y_mask)
         end_time_batch = time.time()
         print "batch " + str(counter) + " duration: " + str(end_time_batch - start_time_batch) + " cost: " + str(c)
@@ -222,12 +233,12 @@ for epoch in range(START_EPOCH, N_EPOCHS):
         
     if n_below_thresh_untilStop > THRESH_STOP:
         logger.info('Finished Training')
-        filename = os.getenv("HOME") + paramsPath + '/params_1l_lr1em4_mom90_b10_epoch' + str(epoch) + '.pkl' 
+        filename = paramsPath + '/epoch_window_' + str(epoch) + '.pkl' 
         utils.saveParams(model_lin, filename)
         break    
 #************************************ save param values **************************************
     if ((epoch+1)%10 == 0):
-        filename = os.getenv("HOME") + paramsPath + '/params_1l_lr1em4_mom90_b10_epoch' + str(epoch) + '.pkl' 
+        filename = paramsPath + '/epoch_window_' + str(epoch) + '.pkl' 
         utils.saveParams(model_lin, filename)
         print 'save'                          
                                

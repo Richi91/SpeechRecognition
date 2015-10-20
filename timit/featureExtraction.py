@@ -47,7 +47,25 @@ def delta(feat, deltawin):
     deltafeat /= norm;
     return deltafeat[deltawin:padfeat.shape[0]-deltawin,:]
  
-   
+def getAllFeatures2(wavFileList, samplerate, winlen, winstep, nfilt,nfft, lowfreq, highfreq, preemph, winSzForDelta):
+    sys.path.append('../spectral')
+    import spectral
+    from spectral import Spectral
+    featureList = []
+    for f in wavFileList:
+        signal, _ = sf.read(f)
+        signal = np.array(signal)
+        rms = np.sqrt(np.mean(np.square(signal)))
+        config = dict(fs=16000, scale='mel', dct=False, deltas=True, window_length=winlen,\
+                      window_shift=winstep,lowerf=lowfreq,upperf=highfreq,\
+                      pre_emph=preemph,compression='none')
+        extractor = spectral.Spectral(**config)
+        featureList.append(extractor.transform(sig))
+    return np.array(featureList)
+
+
+    
+    
 def getFeatures(signal, samplerate, winlen, winstep, nfilt,nfft, lowfreq, highfreq, preemph, winSzForDelta):
     '''
     Computes filterbank energies on a mel scale + total energy using 'fbank'
@@ -91,6 +109,7 @@ def getFeatures(signal, samplerate, winlen, winstep, nfilt,nfft, lowfreq, highfr
             
     '''
     # calculate fbank energies and total energy
+    #TODO: note somewhere that fbank did not use window function, had to be added
     feat,energy = fbank(signal, samplerate, winlen, winstep, nfilt,nfft, lowfreq, highfreq,preemph)
     feat = np.column_stack((energy,feat))
     # calculate delta and acceleration
@@ -408,8 +427,9 @@ def CreateNetCDF(useCTC):
         os.makedirs(dataPath)
     
     winlen, winstep, nfilt, lowfreq, highfreq, preemph, winSzForDelta, samplerate = \
-    0.025,  0.01,   40,     200,     8000,     0.97,    2,             16000           
-    nfft = utils.nextpow2(samplerate*winlen) 
+    0.025,  0.010,   40,     120,     7000,     0.97,    2,             16000           
+    #nfft = utils.nextpow2(samplerate*winlen) 
+    nfft = int(samplerate*winlen)
     n_speaker_val = 50 
     
     wav_train, wav_val, wav_test, phn_train, phn_val, phn_test = getTrainValTestPaths(rootdir,n_speaker_val)
