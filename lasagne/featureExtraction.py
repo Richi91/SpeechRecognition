@@ -15,9 +15,14 @@ import random
 import netCDF4
 import utils
 from netCDF4 import Dataset
+from features import sigproc
+from scipy.fftpack import dct
 
-
-
+def hamming(n):
+    """
+    Generate a hamming window of n points as a numpy array.
+    """
+    return 0.54 - 0.46 * np.cos(2 * np.pi / n * (np.arange(n) + 0.5))
 
 def delta(feat, deltawin):
     '''
@@ -42,7 +47,7 @@ def delta(feat, deltawin):
     padfeat = np.concatenate((pad_bot,feat,pad_top),axis=0)
     
     norm = 2.0 * sum([it**2 for it in range(1, deltawin+1)])
-    deltafeat = sum([it*(np.roll(padfeat,-2,axis=0)-np.roll(padfeat,2,axis=0)) for it in range(1, deltawin+1)])
+    deltafeat = sum([it*(np.roll(padfeat,-it,axis=0)-np.roll(padfeat,it,axis=0)) for it in range(1, deltawin+1)])
     
     deltafeat /= norm;
     return deltafeat[deltawin:padfeat.shape[0]-deltawin,:]
@@ -108,10 +113,22 @@ def getFeatures(signal, samplerate, winlen, winstep, nfilt,nfft, lowfreq, highfr
             +1 for energy, *3 because of deltas
             
     '''
-    # calculate fbank energies and total energy
-    #TODO: note somewhere that fbank did not use window function, had to be added
-    feat,energy = fbank(signal, samplerate, winlen, winstep, nfilt,nfft, lowfreq, highfreq,preemph)
-    feat = np.column_stack((energy,feat))
+    # Part of the following code is copied from function features.fbank
+    # Unfortunately, one can't specify the window function in features.fbank
+    # Hamming window is used here
+
+    highfreq= highfreq or samplerate/2
+    signal = sigproc.preemphasis(signal,preemph)
+    frames = sigproc.framesig(signal, winlen*samplerate, winstep*samplerate,winfunc=hamming)
+    pspec = sigproc.powspec(frames,nfft)
+    energy = np.sum(pspec,1) # this stores the total energy in each frame
+    energy = np.where(energy == 0,np.finfo(float).eps,energy) # if energy is zero, we get problems with log
+    fb = features.get_filterbanks(nfilt,nfft,samplerate,lowfreq,highfreq)
+    feat = np.dot(pspec,fb.T) # compute the filterbank energies
+    feat = np.where(feat == 0,np.finfo(float).eps,feat) # if feat is zero, we get problems with log
+
+    # Use log feature bank and log energy
+    feat = np.column_stack((np.log(energy),np.log(feat)))
     # calculate delta and acceleration
     deltaFeat = delta(feat, winSzForDelta)
     accFeat = delta(deltaFeat, winSzForDelta)
