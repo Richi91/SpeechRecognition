@@ -1,15 +1,34 @@
-# Attempt to implement deep BLSTM with Lasagne
+# BiRNN in Blocks trained with CTC on TIMIT
 
-The network is applied to phoneme recognition on the TIMIT dataset. 
+Trainable with CTC on phoneme transcription or framewise. 
 
-Still under development... achieve phone error rate of not better than 40% with 1 layer BLSTM and CTC
+Implementation in Blocks and Lasagne. Note that the Lasagne implementation is at the moment a bit messed up and will be deleted soon.
 
 requirements: 
-	- Theano + Lasagne
-	- netCDF + netCDF4-Python to read and store data (same is used in CURRENNT library)
-	- PySoundFile to read timit's depcrecated .wav-like format, See: http://pysoundfile.readthedocs.org/en/0.7.0/ and https://github.com/bastibe/PySoundFile
-	- python_speech_features for preprocessing (FFT-based filterbank), see http://python-speech-features.readthedocs.org/en/latest/ and https://github.com/jameslyons/python_speech_features
-	- Lasagne-CTC
+	- Theano: http://deeplearning.net/software/theano/install.html
+	-  Blocks: http://blocks.readthedocs.org/en/latest/setup.html
+	- Blocks extras: https://github.com/mila-udem/blocks-extras
+	- Fuel: http://fuel.readthedocs.org/en/latest/setup.html
+	- PySoundFile to read timit's depcrecated .wav-like format, See: 
+http://pysoundfile.readthedocs.org/en/0.7.0/ and https://github.com/bastibe/PySoundFile
+	- python_speech_features for preprocessing (FFT-based filterbank), see 
+	http://python-speech-features.readthedocs.org/en/latest/ + https://github.com/jameslyons/python_speech_features
 
-TODO:
-1) beamsearch decoding of networks output sequences
+
+#Notes: 
+- Decoding: simple argmax, no expensive beamsearch
+- Mapping from original 61 to reduced 39 Phonemes can be done before training or during decoding, didn't notice a difference in performance.
+
+----------
+
+**3 layer BiRNN with 300 250-200 hidden units, batch size 40, AdaDelta:**
+
+ GRU on MFCC features: ~19% PER
+- GRU on Log-FB features: ~20% PER
+- LSTM on MFCC features: ?
+- LSTM on Log-FB features: ?
+
+
+#Credits
+CTC Implementation: ctc_cost.py is copied from Philemon Brakel's repository: 
+	https://github.com/pbrakel/CTC-Connectionist-Temporal-Classification
