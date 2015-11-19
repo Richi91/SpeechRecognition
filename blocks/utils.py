@@ -124,7 +124,8 @@ class PhonemeErrorRate(SimpleExtension, MonitoringExtension):
         mappedBlankSymbol=np.max(scoreMap.values())
         mappedBatch=np.zeros((batch.shape[0],batch.shape[1], mappedBlankSymbol+1))
         for key in scoreMap.keys():
-            mappedBatch[:,:,scoreMap[key]] += batch[:,:,key]
+            if scoreMap[key] is not None:
+                mappedBatch[:,:,scoreMap[key]] += batch[:,:,key]
         # blank symbol is not in the scoreMap, but it's the last element
         mappedBatch[:,:,-1] = batch[:,:,-1]
         return mappedBatch
@@ -260,7 +261,8 @@ class PhonemeErrorRateFramewise(SimpleExtension, MonitoringExtension):
         mappedBlankSymbol=np.max(scoreMap.values())
         mappedBatch=np.zeros((batch.shape[0],batch.shape[1], mappedBlankSymbol+1))
         for key in scoreMap.keys():
-            mappedBatch[:,:,scoreMap[key]] += batch[:,:,key]
+            if scoreMap[key] is not None:
+                mappedBatch[:,:,scoreMap[key]] += batch[:,:,key]
         return mappedBatch
 
 
