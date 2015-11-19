@@ -2,7 +2,8 @@
 
 Trainable with CTC on phoneme transcription or framewise. 
 
-Implementation in Blocks and Lasagne. Note that the Lasagne implementation is at the moment a bit messed up and will be deleted soon.
+Implementation both in Blocks and Lasagne. Note that the Lasagne implementation is at the moment a bit messed up and will be deleted or updated soon.
+Use the blocks implementation instead.
 
 requirements: 
 	- Theano: http://deeplearning.net/software/theano/install.html
@@ -21,7 +22,7 @@ http://pysoundfile.readthedocs.org/en/0.7.0/ and https://github.com/bastibe/PySo
 
 ----------
 
-**3 layer BiRNN with 300 250-200 hidden units, batch size 40, AdaDelta:**
+**3 layer BiRNN with [300,250,200] hidden units, batch size 40, AdaDelta:**
 
  GRU on MFCC features: ~19% PER
 - GRU on Log-FB features: ~20% PER
