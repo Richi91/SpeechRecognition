@@ -26,9 +26,9 @@ http://pysoundfile.readthedocs.org/en/0.7.0/ and https://github.com/bastibe/PySo
 
 **3 layer BiRNN with [300,250,200] hidden units, batch size 40, AdaDelta, mapping to 39 classes before training:**
 
- GRU on MFCC features: ~19% PER
-- GRU on Log-FB features: ~20% PER
-- LSTM on MFCC features: ?
+ GRU on MFCC features: 19.5% PER
+- GRU on Log-FB features: 20.5% PER
+- LSTM on MFCC features: 19.5% PER
 - LSTM on Log-FB features: ?
 
 
