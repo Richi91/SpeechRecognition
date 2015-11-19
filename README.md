@@ -18,11 +18,13 @@ http://pysoundfile.readthedocs.org/en/0.7.0/ and https://github.com/bastibe/PySo
 
 #Notes: 
 - Decoding: simple argmax, no expensive beamsearch
-- Mapping from original 61 to reduced 39 Phonemes can be done before training or during decoding, didn't notice a difference in performance.
+- Mapping from original 61 to reduced 39 Phonemes can be done before training or during decoding.
+	Mapping during decoding is apparently done wrong atm. I fold the 61 output distributions after softmax to 39, by adding up. This however produces accuracies
+
 
 ----------
 
-**3 layer BiRNN with [300,250,200] hidden units, batch size 40, AdaDelta:**
+**3 layer BiRNN with [300,250,200] hidden units, batch size 40, AdaDelta, mapping to 39 classes before training:**
 
  GRU on MFCC features: ~19% PER
 - GRU on Log-FB features: ~20% PER
