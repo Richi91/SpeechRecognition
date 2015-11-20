@@ -25,9 +25,9 @@ Description, default value and dtype of the configs, that must be specified.
 - winSzForDelta=2: int, "N" in formula for calculating deltas
 - samplerate=16000: int, samplerate of Timit dataset
 - n_speaker_val=50: int, number of speakers in valid set (with all sentences)
-- featureType='logFB': string, either 'logFB' or 'mfcc'
 - numcep=13: int, number of cepstral coefficients
 - ceplifter=22: int,
+- featureType='logFB': string, either 'logFB' or 'mfcc'
 - normalisation='trainData': string, either 'trainData' or 'individual',
     the former normalises on the train data's mean and variance,
     the latter normalizes each feature individually
@@ -69,23 +69,23 @@ Description, default value and dtype of the configs, that must be specified.
 """
 # ************************* GENERAL ********************************
 task='CTC'
-mapTo39Phonemes_Training=False
-mapTo39Phonemes_Decoding=True
+mapTo39Phonemes_Training=True
+mapTo39Phonemes_Decoding=False
 
 
 # ***************** FEATURE EXTRACTION PARAMETERS ******************
 winlen=0.0256 
 winstep=0.010 
-nfilt=40 
+nfilt=60
 lowfreq=133.3333
 highfreq=6855.4976
 preemph=0.97
 winSzForDelta=2
 samplerate=16000
 n_speaker_val=50
-featureType='mfcc'
 numcep=13
 ceplifter=22
+featureType='logFB'
 normalisation='trainData'
 
 
@@ -103,7 +103,7 @@ path_to_dataset_framewise=os.getenv("HOME") + '/data/TimitFeat/Framewise/Timit.h
 path_to_model=os.getenv("HOME")+'/data/TimitModelParams/blocks/model.pkl'
 #**************************** TRAIN PARAMETERS *********************
 max_epochs=100
-batch_size=32
+batch_size=20
 step_rule='AdaDelta' 
 learning_rate=0.1 
 momentum=0.9 
@@ -111,8 +111,8 @@ step_clipping=1.
 
 
 #**************************** MODEL PARAMETERS *********************
-transition='LSTM'
-dims_transition  = [300,250,200]
+transition='GRU'
+dims_transition  = [300,250,200,180,150,120,100]
 
 
 #**************************** REGULARIZATION ***********************

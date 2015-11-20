@@ -34,7 +34,7 @@ from blocks.extensions.training import TrackTheBest
 from blocks.roles import INPUT, WEIGHT
 
 #logger = logging.getLogger(__name__)
-logger = createLogger('log.log')
+#logger = createLogger('log.log')
 
 
 #***************** DataSet *******************
@@ -158,7 +158,7 @@ elif conf.task=='framewise':
 else:
     raise ValueError, conf.task
 per_val_monitor = PER_Monitor(stream_val, theano.function([x,x_m],y_hat_softmax), 
-                             after_epoch=True, prefix='valPER')
+                             before_first_epoch=True,after_epoch=True, prefix='valPER')
 per_test_monitor = PER_Monitor(stream_test, theano.function([x,x_m],y_hat_softmax), 
                              before_first_epoch=False, every_n_epochs=5, prefix='testPER')
 
@@ -172,7 +172,7 @@ extensions=[val_monitor,
             FinishAfter(after_n_epochs=conf.max_epochs),
             checkpoint,
             Printing(),
-            TrackTheBest(record_name='valid_log_p',notification_name='valid_log_p_best_so_far'),
+            TrackTheBest(record_name='val_monitor',notification_name='valid_log_p_best_so_far'),
             FinishIfNoImprovementAfter(notification_name='valid_log_p_best_so_far', epochs=conf.epochs_early_stopping),
             ]
 main_loop = MainLoop(

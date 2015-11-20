@@ -127,6 +127,76 @@ def logFilterbankFeatures(signal,samplerate=16000,winlen=0.0255,winstep=0.01,
     return np.concatenate((feat,deltaFeat,accFeat),axis=1)
 
 
+
+def filterbankFeatures(signal,samplerate=16000,winlen=0.0255,winstep=0.01,
+          nfilt=40,nfft=512,lowfreq=133.3333,highfreq=6855.4976,preemph=0.97,
+          winSzForDelta=2):
+    '''
+    Computes filterbank energies on a mel scale + total energy using
+    with the code taken from features.fbank, which does not accept
+    window function as a param.
+    function from package 'python_speech_features', see
+    http://python-speech-features.readthedocs.org/en/latest/ or
+    https://github.com/jameslyons/python_speech_features
+
+    Therefore it calculates the FFT of the signal and sums the the weighted
+    bins, distributed on a mel scale. Weighting is done with tri-angular filters.
+    For these filter energies + total energy, deltas are calculated.
+
+    :parameters:
+        - signal : np.ndarray, dtype=float
+            input vector of the speech signal
+        - samplerate : int
+        - winlen: float
+            length of analysis window in seconds
+        - winstep: float
+            step size between successive windows in seconds
+        - nfilt: int
+             number of filter energies to compute (total energy not included).
+             e.g. 40 --> Output dim = (40+1)*3
+        - nfft: int
+            FFT size
+        - lowfreq: int
+            lower end on mel frequency scale, on which filter banks are distributed
+        - highfreq: int
+            upper end on mel frequency scale, on which filter banks are distributed
+        - preemph: float
+            pre-emphasis coefficient
+        - deltafeat: np.ndarray, dtype=float
+            deltas of the input features
+        - winSzForDelta: int
+            window size for computing deltas. E.g. 2 --> t-2, t-1, t+1 and t+2 are
+            for calculating the deltas
+    :returns:
+        - features: numpy.array: float
+            feature-matrix. 1st dimension: time steps of 'winstep',
+            2nd dim: feature dimension: (nfilt + 1)*3,
+            +1 for energy, *3 because of deltas
+
+    '''
+    # Part of the following code is copied from function features.fbank
+    # Unfortunately, one can't specify the window function in features.fbank
+    # Hamming window is used here
+
+    highfreq= highfreq or samplerate/2
+    signal = sigproc.preemphasis(signal,preemph)
+    frames = sigproc.framesig(signal, winlen*samplerate, winstep*samplerate,winfunc=hamming)
+    pspec = sigproc.powspec(frames,nfft)
+    energy = np.sum(pspec,1) # this stores the total energy in each frame
+    energy = np.where(energy == 0,np.finfo(float).eps,energy) # if energy is zero, we get problems with log
+    fb = features.get_filterbanks(nfilt,nfft,samplerate,lowfreq,highfreq)
+    feat = np.dot(pspec,fb.T) # compute the filterbank energies
+    feat = np.where(feat == 0,np.finfo(float).eps,feat) # if feat is zero, we get problems with log
+
+    # Use log feature bank and log energy
+    feat = np.column_stack((energy,feat))
+    # calculate delta and acceleration
+    deltaFeat = delta(feat, winSzForDelta)
+    accFeat = delta(deltaFeat, winSzForDelta)
+    # stack features + delta + acceleration
+    return np.concatenate((feat,deltaFeat,accFeat),axis=1)
+
+
 def mfccFeatures(signal,samplerate=16000,winlen=0.0256,winstep=0.01, nfilt=40, 
                  nfft=512,lowfreq=133.3333,highfreq=6855.4976,preemph=0.97, 
                  winSzForDelta=2, numcep=13, ceplifter=22, appendEnergy=True):
@@ -246,6 +316,11 @@ def getAllFeatures(featureType, wavFileList, samplerate=16000,winlen=0.0256,wins
                 numcep=numcep, ceplifter=ceplifter, appendEnergy=appendEnergy))
         elif featureType == 'logFB':
             featureList.append(logFilterbankFeatures(
+                signal=signal,samplerate=samplerate,winlen=winlen,winstep=winstep,
+                nfilt=nfilt,nfft=nfft,lowfreq=lowfreq,highfreq=highfreq,preemph=preemph,
+                winSzForDelta=winSzForDelta))
+        elif featureType == 'FB':
+            featureList.append(filterbankFeatures(
                 signal=signal,samplerate=samplerate,winlen=winlen,winstep=winstep,
                 nfilt=nfilt,nfft=nfft,lowfreq=lowfreq,highfreq=highfreq,preemph=preemph,
                 winSzForDelta=winSzForDelta))
