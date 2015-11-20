@@ -19,7 +19,8 @@ http://pysoundfile.readthedocs.org/en/0.7.0/ and https://github.com/bastibe/PySo
 #Notes: 
 - Decoding: simple argmax, no expensive beamsearch
 - Mapping from original 61 to reduced 39 Phonemes can be done before training or during decoding.
-	Mapping during decoding is apparently done wrong atm. I fold the 61 output distributions after softmax to 39, by adding up. This however produces accuracies
+	
+TODO: Mapping during decoding is done incorrectly atm. I fold the 61 output distribution after softmax to 39, by summing the corresponding probabilities. 
 
 
 ----------
