@@ -69,8 +69,8 @@ Description, default value and dtype of the configs, that must be specified.
 """
 # ************************* GENERAL ********************************
 task='CTC'
-mapTo39Phonemes_Training=True
-mapTo39Phonemes_Decoding=False
+mapTo39Phonemes_Training=False
+mapTo39Phonemes_Decoding=True
 
 
 # ***************** FEATURE EXTRACTION PARAMETERS ******************
@@ -103,7 +103,7 @@ path_to_dataset_framewise=os.getenv("HOME") + '/data/TimitFeat/Framewise/Timit.h
 path_to_model=os.getenv("HOME")+'/data/TimitModelParams/blocks/model.pkl'
 #**************************** TRAIN PARAMETERS *********************
 max_epochs=100
-batch_size=20
+batch_size=100
 step_rule='AdaDelta' 
 learning_rate=0.1 
 momentum=0.9 
@@ -112,7 +112,7 @@ step_clipping=1.
 
 #**************************** MODEL PARAMETERS *********************
 transition='GRU'
-dims_transition  = [300,250,200,180,150,120,100]
+dims_transition  = [300]
 
 
 #**************************** REGULARIZATION ***********************

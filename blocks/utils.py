@@ -93,13 +93,13 @@ class PhonemeErrorRate(SimpleExtension, MonitoringExtension):
             target_masks = batch[conf.target_mask_theano]
 
             outputs = self.getOutput(inputs, input_masks)
+            decoded = self.decodeSequences(outputs, input_masks)
+            targets = self.maskTargets(targets,target_masks)
+
             if conf.mapTo39Phonemes_Decoding:
                 scoreMap = getPhonemeMapForScoring()
-                outputs = self.mapOutputsForScoring(outputs, scoreMap)
-                targets = self.mapTargetsForScoring(targets, scoreMap)
-            decoded = self.decodeSequences(outputs, input_masks)
-
-            targets = self.maskTargets(targets,target_masks)
+                decoded = self.mapForScoring(decoded, scoreMap)
+                targets = self.mapForScoring(targets, scoreMap)
 
             for t,d in zip(targets,decoded):
                 per.append(np.min([self.per(t,d),1]))
@@ -112,29 +112,14 @@ class PhonemeErrorRate(SimpleExtension, MonitoringExtension):
         self.add_records(self.main_loop.log, accuracies_dict.items())
 
 
-    def mapOutputsForScoring(self, batch, scoreMap):
-        """
-        This function maps 61 phonemes + blank to 39 phonemes + blank
-        Adds up network outputs that are mapped to the same output for scoring
-        Not sure if it is better to map-sum the softmax outputs, the linear outputs
-        or to map after decoding.
-
-        Here: sum the softmax outputs (if the provided output function is the softmax output)
-        """
-        mappedBlankSymbol=np.max(scoreMap.values())
-        mappedBatch=np.zeros((batch.shape[0],batch.shape[1], mappedBlankSymbol+1))
-        for key in scoreMap.keys():
-            if scoreMap[key] is not None:
-                mappedBatch[:,:,scoreMap[key]] += batch[:,:,key]
-        # blank symbol is not in the scoreMap, but it's the last element
-        mappedBatch[:,:,-1] = batch[:,:,-1]
-        return mappedBatch
-
-    def mapTargetsForScoring(self, batch, scoreMap):
-        mappedBlankSymbol=np.max(scoreMap.values())
-        # 'q' == None --> make it a blank, blanks will be removed anyway during decoding
-        return np.array([scoreMap[s] if scoreMap[s] is not None else mappedBlankSymbol
-                for s in batch.flatten() ]).reshape(batch.shape)
+    def mapForScoring(self, batch, scoreMap):
+        #mappedBlankSymbol=np.max(scoreMap.values())
+        # 'q' == None --> 'q' not used for scoring
+        mapped = []
+        for elem in batch:
+            mapped.append(np.array([scoreMap[s] for s in elem.flatten()
+                         if scoreMap[s] is not None]))
+        return mapped
 
 
     def maskTargets(self, targets,target_masks):
@@ -229,11 +214,12 @@ class PhonemeErrorRateFramewise(SimpleExtension, MonitoringExtension):
             masks = batch[conf.input_mask_theano]
             targets = batch[conf.target_theano]
             outputs = self.getOutput(inputs, masks)
+            decoded = self.decodeSequences(outputs)
+
             if conf.mapTo39Phonemes_Decoding:
                 scoreMap = getPhonemeMapForScoring()
-                outputs = self.mapOutputsForScoring(outputs, scoreMap)
-                targets = self.mapTargetsForScoring(targets, scoreMap)
-            decoded = self.decodeSequences(outputs)
+                decoded = self.mapForScoring(decoded, scoreMap)
+                targets = self.mapForScoring(targets, scoreMap)
 
             per.append(np.min([self.per(targets,decoded,masks),1]))
         per=np.asarray(per)
@@ -249,26 +235,11 @@ class PhonemeErrorRateFramewise(SimpleExtension, MonitoringExtension):
         self.add_records(self.main_loop.log, accuracies_dict.items())
 
 
-    def mapOutputsForScoring(self, batch, scoreMap):
-        """
-        This function maps 61 phonemes + blank to 39 phonemes + blank
-        Adds up network outputs that are mapped to the same output for scoring
-        Not sure if it is better to map-sum the softmax outputs, the linear outputs
-        or to map after decoding.
 
-        Here: sum the softmax outputs (if the provided output function is the softmax output)
-        """
-        mappedBlankSymbol=np.max(scoreMap.values())
-        mappedBatch=np.zeros((batch.shape[0],batch.shape[1], mappedBlankSymbol+1))
-        for key in scoreMap.keys():
-            if scoreMap[key] is not None:
-                mappedBatch[:,:,scoreMap[key]] += batch[:,:,key]
-        return mappedBatch
-
-
-    def mapTargetsForScoring(self, batch, scoreMap):
+    def mapForScoring(self, batch, scoreMap):
         return np.array([scoreMap[s] # 'q' == None --> Leave it None, take care during calc of PER
                 for s in batch.flatten() ]).reshape(batch.shape)
+
 
     def decodeSequences(self, outputs):
         """
@@ -294,6 +265,9 @@ class PhonemeErrorRateFramewise(SimpleExtension, MonitoringExtension):
             - phoneme error rate
         """
         if conf.mapTo39Phonemes_Decoding:
+            # None/NaN in targets are not scored, which is the case for phoneme 'q'
+            # if a 'q' occurs in the output (at the wrong position), it is counted
+            # as an error though. (a==b = False, if a and b are NaNs.)
             return np.float(np.sum(y[mask==1] != y_hat[mask==1]))/np.sum(np.isfinite(y))
         else:
             return np.mean(y[mask==1] != y_hat[mask==1])
